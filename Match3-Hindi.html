@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>L3T3RS अक्षर खेल</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&display=swap');
+
+    body {
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f2f2f2;
+    }
+
+    h1 {
+      margin: 0 20px 0 0;
+      font-size: 28px;
+    }
+
+    #topBar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .game-button {
+      font-size: 18px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #999;
+      background-color: #fff;
+    }
+
+    #mainGame {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      max-width: 700px;
+      margin: 0 auto 10px auto;
+    }
+
+    #gameBoard {
+      display: grid;
+      grid-template-columns: repeat(8, 50px);
+      grid-gap: 5px;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #333;
+      font-size: 24px;
+      cursor: pointer;
+      background-color: #ffffff;
+      color: #333;
+      transition: background-color 0.3s, box-shadow 0.3s;
+      border-radius: 8px;
+      box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .cell:hover {
+      background-color: #e0e0e0;
+    }
+
+    .selected {
+      background-color: #4caf50 !important;
+      color: white !important;
+      border: 2px solid #2e7d32;
+      box-shadow: 0 0 5px #2e7d32;
+    }
+
+    .highlighted {
+      background-color: gold;
+      color: black;
+      font-weight: bold;
+    }
+
+    .shake {
+      animation: shake 0.2s;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translate(0, 0); }
+      25% { transform: translate(-2px, 0); }
+      50% { transform: translate(2px, 0); }
+      75% { transform: translate(-2px, 0); }
+    }
+
+    #sidebar {
+      width: auto;
+      max-width: 360px;
+      font-size: 17px;
+      border: 2px solid #ccc;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    #score {
+      margin-top: 8px;
+      font-size: 18px;
+    }
+
+    #instructions {
+      font-size: 16px;
+      margin-top: 10px;
+      color: #333;
+      max-width: 100%;
+      word-wrap: break-word;
+      white-space: normal;
+      line-height: 1.4em;
+    }
+
+    #goalsList {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0 0;
+    }
+    #accordion {
+      width: 700px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+      background-color: #fefefe;
+    }
+
+    .accordion-header {
+      background-color: #eee;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .accordion-content {
+      display: none;
+      padding: 10px;
+      background-color: #fafafa;
+    }
+
+    .accordion-content label {
+      display: block;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    #colorButtons {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .color-scheme {
+      width: 30px;
+      height: 30px;
+      border: 2px solid;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .icon-button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    #pointsLog {
+      width: 700px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background-color: #f9f9f9;
+      margin-top: 10px;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+    }
+
+    .log-letter {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div id="topBar">
+    <h1>L3T3RS अक्षर खेल</h1>
+    <button class="game-button" onclick="startGame()">खेल शुरू करें</button>
+    <button class="game-button" onclick="resetGame()">खेल रीसेट करें</button>
+  </div>
+
+  <div id="mainGame">
+    <div id="gameBoard"></div>
+    <div id="sidebar">
+      <div><strong>शेष चालें:</strong> <span id="movesLeft">15</span></div>
+      <div style="margin-top: 10px;"><strong>लक्ष्य:</strong></div>
+      <ul id="goalsList"></ul>
+      <div id="instructions">
+        वर्णों को मिलाकर सूचीबद्ध लक्ष्यों को पूरा करें।<br>
+        प्रत्येक लक्ष्य यह ट्रैक करेगा कि आपने कितनी बार पूरा किया है।
+      </div>
+      <div id="score">अंक: 0</div>
+    </div>
+  </div>
+
+  <div id="accordion">
+    <div class="accordion-header" onclick="toggleAccordion()">खेल विकल्प ▼</div>
+    <div class="accordion-content" id="accordionContent">
+      <label>
+        ध्वनि: <button class="icon-button" onclick="toggleSound()" id="soundIcon">🔊</button>
+      </label>
+      <label>वर्णों की संख्या: <span id="letterCountDisplay">8</span><br>
+        <input type="range" id="letterCountSlider" min="2" max="55" value="8" oninput="updateLetterCount()">
+      </label>
+      <label>चालों की संख्या: <span id="moveCountDisplay">15</span><br>
+        <input type="range" id="moveCountSlider" min="5" max="50" value="15" oninput="updateMoveCount()">
+      </label>
+      <label><input type="checkbox" id="stretchGoalsCheckbox" checked> विस्तारित लक्ष्य शामिल करें (4 या 5 मिलान)</label>
+
+      <label>फ़ॉन्ट:
+        <select id="fontSelector" onchange="updateFont()">
+          <option value="'Noto Sans Devanagari', sans-serif" selected>नोटो देवनागरी</option>
+          <option value="'Comic Neue', cursive">Comic Neue</option>
+          <option value="'VT323', monospace">VT323</option>
+        </select>
+      </label>
+
+      <label>रंग योजना:</label>
+      <div id="colorButtons">
+        <button class="color-scheme" style="background-color: #00274C; border-color: #FFCB05;" onclick="setColorScheme('#00274C', '#FFCB05')"></button>
+        <button class="color-scheme" style="background-color: #FFFFFF; border-color: #333333;" onclick="setColorScheme('#FFFFFF', '#333333')"></button>
+        <button class="color-scheme" style="background-color: #FF0000; border-color: #FFFFFF;" onclick="setColorScheme('#FF0000', '#FFFFFF')"></button>
+        <button class="color-scheme" style="background-color: #00FF00; border-color: #0000FF;" onclick="setColorScheme('#00FF00', '#0000FF')"></button>
+        <button class="color-scheme" style="background-color: #8B00FF; border-color: #FFD700;" onclick="setColorScheme('#8B00FF', '#FFD700')"></button>
+        <button class="color-scheme" style="background-color: #FFA500; border-color: #FFFFFF;" onclick="setColorScheme('#FFA500', '#FFFFFF')"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pointsLog"></div>
+<script>
+const hindiAlphabet = "अआइईउऊऋएऐओऔअंअःकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळक्षज्ञ";
+let selectedAlphabet = hindiAlphabet;
+const gridSize = 8;
+let score = 0;
+let cells = [];
+let randomLetters = [];
+let letterSoundEnabled = true;
+let movesLeft = 15;
+let goals = [];
+
+const gameBoard = document.getElementById('gameBoard');
+const scoreDisplay = document.getElementById('score');
+const pointsLogDisplay = document.getElementById('pointsLog');
+const letterCountSlider = document.getElementById('letterCountSlider');
+const letterCountDisplay = document.getElementById('letterCountDisplay');
+const moveCountSlider = document.getElementById('moveCountSlider');
+const moveCountDisplay = document.getElementById('moveCountDisplay');
+const soundIcon = document.getElementById('soundIcon');
+const goalsList = document.getElementById('goalsList');
+const movesLeftDisplay = document.getElementById('movesLeft');
+const stretchGoalsCheckbox = document.getElementById('stretchGoalsCheckbox');
+const fontSelector = document.getElementById('fontSelector');
+
+function toggleAccordion() {
+  const content = document.getElementById('accordionContent');
+  content.style.display = content.style.display === 'block' ? 'none' : 'block';
+}
+
+function updateLetterCount() {
+  letterCountDisplay.textContent = letterCountSlider.value;
+}
+
+function updateMoveCount() {
+  moveCountDisplay.textContent = moveCountSlider.value;
+}
+
+function toggleSound() {
+  letterSoundEnabled = !letterSoundEnabled;
+  soundIcon.textContent = letterSoundEnabled ? '🔊' : '🔇';
+}
+
+function setColorScheme(bg, fg) {
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.style.backgroundColor = bg;
+    cell.style.color = fg;
+  });
+}
+
+function updateFont() {
+  const font = fontSelector.value;
+  document.body.style.fontFamily = font;
+}
+
+function getRandomLetter() {
+  return randomLetters[Math.floor(Math.random() * randomLetters.length)];
+}
+
+function selectRandomLetters() {
+  const count = parseInt(letterCountSlider.value);
+  const letters = selectedAlphabet.split('');
+  randomLetters = [];
+  while (randomLetters.length < count && letters.length > 0) {
+    const index = Math.floor(Math.random() * letters.length);
+    randomLetters.push(...letters.splice(index, 1));
+  }
+}
+
+function generateGoals() {
+  const count = randomLetters.length;
+  const stretchEnabled = stretchGoalsCheckbox.checked;
+  goals = [];
+
+  let types = [];
+  if (stretchEnabled) {
+    const num5x = Math.floor(count * 0.2);
+    const num4x = Math.floor(count * 0.4);
+    const num3x = count - num5x - num4x;
+    types = [
+      ...Array(num3x).fill(3),
+      ...Array(num4x).fill(4),
+      ...Array(num5x).fill(5)
+    ];
+  } else {
+    types = Array(count).fill(3);
+  }
+
+  types.sort(() => Math.random() - 0.5);
+
+  for (let i = 0; i < count; i++) {
+    const letter = randomLetters[i];
+    const type = types[i];
+    const target = type === 3 ? 3 : (type === 4 ? 2 : 1);
+    goals.push({ letter, type, target, progress: 0 });
+  }
+}
+
+function updateGoalsDisplay() {
+  goalsList.innerHTML = '';
+  const sorted = [...goals].sort((a, b) => a.type - b.type);
+  sorted.forEach(goal => {
+    const done = goal.progress >= goal.target;
+    const text = `${goal.letter} के ${goal.type} मिलान (लक्ष्य: ${goal.target}, पूर्ण: ${goal.progress})`;
+    const li = document.createElement('li');
+    li.innerHTML = done ? `<s>${text}</s>` : text;
+    goalsList.appendChild(li);
+  });
+}
+
+function initBoard() {
+  selectRandomLetters();
+  generateGoals();
+  updateGoalsDisplay();
+  gameBoard.innerHTML = '';
+  cells = [];
+  for (let i = 0; i < gridSize * gridSize; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    cell.dataset.index = i;
+    cell.textContent = getRandomLetter();
+    cell.addEventListener('click', () => selectCell(cell));
+    gameBoard.appendChild(cell);
+    cells.push(cell);
+  }
+  score = 0;
+  scoreDisplay.textContent = `अंक: ${score}`;
+  movesLeft = parseInt(moveCountSlider.value);
+  movesLeftDisplay.textContent = movesLeft;
+  pointsLogDisplay.innerHTML = '';
+  checkMatches();
+}
+
+function startGame() {
+  updateLetterCount();
+  updateMoveCount();
+  updateFont();
+  initBoard();
+}
+
+function resetGame() {
+  startGame();
+}
+
+function selectCell(cell) {
+  const selected = document.querySelector('.selected');
+  if (selected) {
+    const i1 = parseInt(selected.dataset.index);
+    const i2 = parseInt(cell.dataset.index);
+    if (isAdjacent(i1, i2)) {
+      swapCells(selected, cell);
+      selected.classList.remove('selected');
+      checkMatches();
+      movesLeft--;
+      movesLeftDisplay.textContent = movesLeft;
+      if (letterSoundEnabled) speakLetter(cell.textContent);
+      checkEndConditions();
+    } else {
+      selected.classList.remove('selected');
+      cell.classList.add('shake');
+      setTimeout(() => cell.classList.remove('shake'), 200);
+    }
+  } else {
+    cell.classList.add('selected');
+    if (letterSoundEnabled) speakLetter(cell.textContent);
+  }
+}
+
+function isAdjacent(i1, i2) {
+  const r1 = Math.floor(i1 / gridSize), c1 = i1 % gridSize;
+  const r2 = Math.floor(i2 / gridSize), c2 = i2 % gridSize;
+  return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+}
+
+function swapCells(c1, c2) {
+  [c1.textContent, c2.textContent] = [c2.textContent, c1.textContent];
+}
+
+function checkMatches() {
+  const matchGroups = [];
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      const index = i * gridSize + j;
+      const letter = cells[index].textContent;
+      if (!letter) continue;
+      [1, gridSize, gridSize + 1, gridSize - 1].forEach(step => {
+        const group = getMatch(index, letter, step);
+        if (group.length >= 3) matchGroups.push(group);
+      });
+    }
+  }
+  if (matchGroups.length > 0) {
+    const flat = [...new Set(matchGroups.flat())];
+    highlightMatches(flat, matchGroups);
+  } else {
+    checkEndConditions();
+  }
+}
+
+function getMatch(index, letter, step) {
+  const match = [index];
+  for (let i = 1; i < gridSize; i++) {
+    const next = index + step * i;
+    if (cells[next] && cells[next].textContent === letter) match.push(next);
+    else break;
+  }
+  return match;
+}
+
+function highlightMatches(indices, matchGroups) {
+  indices.forEach(i => cells[i].classList.add('highlighted'));
+  setTimeout(() => {
+    clearMatches(indices, matchGroups);
+    applyGravity();
+    refillBoard();
+    checkMatches();
+    checkEndConditions();
+  }, 500);
+}
+
+function clearMatches(indices, matchGroups) {
+  const matchCounts = {};
+
+  matchGroups.forEach(group => {
+    const l = cells[group[0]].textContent;
+    if (group.every(i => cells[i].textContent === l) && group.length >= 3) {
+      matchCounts[l] = matchCounts[l] || [];
+      matchCounts[l].push(group.length);
+    }
+  });
+
+  goals.forEach(goal => {
+    if (matchCounts[goal.letter]) {
+      matchCounts[goal.letter].forEach(size => {
+        if (size >= goal.type) {
+          goal.progress++;
+        }
+      });
+    }
+  });
+
+  updateGoalsDisplay();
+  const points = calculatePoints(indices.length);
+  score += points;
+  scoreDisplay.textContent = `अंक: ${score}`;
+  const letters = indices.map(i => cells[i].textContent);
+  pointsLogDisplay.innerHTML += `<div class="log-entry">+${points} (${letters.join(', ')})</div>`;
+  indices.forEach(i => {
+    cells[i].classList.remove('highlighted');
+    cells[i].textContent = '';
+  });
+}
+
+function calculatePoints(len) {
+  if (len === 3) return 10;
+  if (len === 4) return 20;
+  if (len === 5) return 30;
+  return 50;
+}
+
+function applyGravity() {
+  for (let c = 0; c < gridSize; c++) {
+    for (let r = gridSize - 1; r > 0; r--) {
+      let i = r * gridSize + c;
+      if (!cells[i].textContent) {
+        for (let k = r - 1; k >= 0; k--) {
+          let above = k * gridSize + c;
+          if (cells[above].textContent) {
+            cells[i].textContent = cells[above].textContent;
+            cells[above].textContent = '';
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+function refillBoard() {
+  for (let i = 0; i < gridSize * gridSize; i++) {
+    if (!cells[i].textContent) {
+      cells[i].textContent = getRandomLetter();
+    }
+  }
+}
+
+function speakLetter(letter) {
+  const utterance = new SpeechSynthesisUtterance(letter);
+  utterance.lang = 'hi-IN';
+  window.speechSynthesis.cancel();
+  setTimeout(() => window.speechSynthesis.speak(utterance), 100);
+}
+
+function checkEndConditions() {
+  const allDone = goals.every(goal => goal.progress >= goal.target);
+  if (allDone) {
+    setTimeout(() => {
+      alert("🎉 बधाई हो! आपने सभी लक्ष्य पूरे कर लिए!\nअब अधिक वर्णों के साथ दोबारा प्रयास करें!");
+    }, 100);
+  } else if (movesLeft <= 0) {
+    setTimeout(() => {
+      alert("खेल समाप्त। आपकी सभी चालें समाप्त हो गई हैं।");
+    }, 100);
+  }
+}
+
+startGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter Match-3 Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #gameBoard {
+      display: grid;
+      grid-template-columns: repeat(8, 50px);
+      grid-gap: 5px;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #333;
+      font-size: 24px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      color: #333;
+      transition: background-color 0.3s;
+    }
+    .selected {
+      background-color: #4caf50;
+      color: white;
+    }
+    .highlighted {
+      background-color: #ffeb3b;
+      color: #333;
+    }
+    .shake {
+      animation: shake 0.2s;
+    }
+    @keyframes shake {
+      0% { transform: translate(0px, 0px); }
+      25% { transform: translate(-2px, 0px); }
+      50% { transform: translate(2px, 0px); }
+      75% { transform: translate(-2px, 0px); }
+      100% { transform: translate(0px, 0px); }
+    }
+    #controls {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #score {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    #logContainer {
+      margin-top: 20px;
+      text-align: left;
+      width: 440px;
+    }
+    #pointsLog, #pointsLegend, .asteriskInfo {
+      font-size: 14px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+    .log-entry {
+      margin-bottom: 5px;
+    }
+    .log-letter {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+    }
+    .points-legend, .asteriskInfo {
+      display: block;
+      margin-top: 10px;
+    }
+    .italicized {
+      font-style: italic;
+    }
+    #colorButtons {
+      display: flex;
+      gap: 5px;
+      margin-top: 15px;
+    }
+    .color-scheme {
+      width: 30px;
+      height: 30px;
+      border: 2px solid;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Letter Match-3 Game</h1>
+  <div id="controls">
+    <label>Language: 
+      <select id="languageSelector">
+        <option value="en-US" data-alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ">English (US)</option>
+        <option value="es-ES" data-alphabet="ABCDEFGHIJKLMNÑOPQRSTUVWXYZ">Spanish (ES)</option>
+        <option value="ru-RU" data-alphabet="АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ">Russian (RU)</option>
+        <option value="hi-IN" data-alphabet="अआइईउऊएऐओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसह">Hindi (IN)</option>
+      </select>
+    </label>
+    <br>
+    <label>Number of Letters: <span id="letterCountDisplay">8</span></label>
+    <input type="range" id="letterCountSlider" min="2" max="26" value="8">
+    <br>
+    <label>Letter Sound: <span id="soundToggleDisplay">On</span></label>
+    <input type="range" id="soundToggleSlider" min="0" max="1" value="1" step="1">
+    <br><br>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="resetGame()">Reset Game</button>
+  </div>
+
+  <!-- Color Scheme Selector -->
+  <div id="colorSchemeContainer">
+    <label>Color Scheme:</label>
+    <div id="colorButtons">
+      <button class="color-scheme" style="background-color: #00274C; border-color: #FFCB05;" onclick="setColorScheme('#00274C', '#FFCB05')" aria-label="Michigan"></button>
+      <button class="color-scheme" style="background-color: #FFFFFF; border-color: #333333;" onclick="setColorScheme('#FFFFFF', '#333333')" aria-label="Light-Dark"></button>
+      <button class="color-scheme" style="background-color: #FF0000; border-color: #FFFFFF;" onclick="setColorScheme('#FF0000', '#FFFFFF')" aria-label="Red-White"></button>
+      <button class="color-scheme" style="background-color: #00FF00; border-color: #0000FF;" onclick="setColorScheme('#00FF00', '#0000FF')" aria-label="Green-Blue"></button>
+      <button class="color-scheme" style="background-color: #8B00FF; border-color: #FFD700;" onclick="setColorScheme('#8B00FF', '#FFD700')" aria-label="Purple-Gold"></button>
+      <button class="color-scheme" style="background-color: #FFA500; border-color: #FFFFFF;" onclick="setColorScheme('#FFA500', '#FFFFFF')" aria-label="Orange-White"></button>
+      <button class="color-scheme" style="background-color: #000000; border-color: #FFD700;" onclick="setColorScheme('#000000', '#FFD700')" aria-label="Black-Gold"></button>
+      <button class="color-scheme" style="background-color: #000080; border-color: #FFFFFF;" onclick="setColorScheme('#000080', '#FFFFFF')" aria-label="Navy-White"></button>
+      <button class="color-scheme" style="background-color: #FFC0CB; border-color: #800080;" onclick="setColorScheme('#FFC0CB', '#800080')" aria-label="Pink-Purple"></button>
+      <button class="color-scheme" style="background-color: #00FFFF; border-color: #FF00FF;" onclick="setColorScheme('#00FFFF', '#FF00FF')" aria-label="Cyan-Magenta"></button>
+    </div>
+  </div>
+
+  <div id="gameBoard"></div>
+  <div id="score">Score: 0</div>
+  
+  <div id="logContainer">
+    <p class="asteriskInfo">* Languages marked with an asterisk (*) have limited synthesizer support and may not produce sound consistently.</p>
+    <p class="points-legend">Points Legend: Match: 3=10P, 4=20P, 5=30P, 6+=50P</p>
+    <div id="pointsLog"></div>
+  </div>
+
+  <script>
+    const gridSize = 8;
+    let score = 0;
+    let pointsLog = [];
+    const gameBoard = document.getElementById('gameBoard');
+    const scoreDisplay = document.getElementById('score');
+    const pointsLogDisplay = document.getElementById('pointsLog');
+    const languageSelector = document.getElementById('languageSelector');
+    const letterCountSlider = document.getElementById('letterCountSlider');
+    const letterCountDisplay = document.getElementById('letterCountDisplay');
+    const soundToggleSlider = document.getElementById('soundToggleSlider');
+    const soundToggleDisplay = document.getElementById('soundToggleDisplay');
+    let cells = [];
+    let randomLetters = [];
+    let letterSoundEnabled = true;
+    let selectedLanguage = 'en-US';
+    let selectedAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    function setColorScheme(baseColor, secondaryColor) {
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.style.backgroundColor = baseColor;
+        cell.style.color = secondaryColor;
+      });
+    }
+
+    function getRandomLetter() {
+      return randomLetters[Math.floor(Math.random() * randomLetters.length)];
+    }
+
+    function selectRandomLetters() {
+      const letterCount = parseInt(letterCountSlider.value);
+      randomLetters = [];
+      const lettersArray = selectedAlphabet.split('');
+      while (randomLetters.length < letterCount) {
+        const randomIndex = Math.floor(Math.random() * lettersArray.length);
+        randomLetters.push(...lettersArray.splice(randomIndex, 1));
+      }
+    }
+
+    function updateLetterCount() {
+      letterCountDisplay.textContent = letterCountSlider.value;
+    }
+
+    function toggleSound() {
+      letterSoundEnabled = soundToggleSlider.value === '1';
+      soundToggleDisplay.textContent = letterSoundEnabled ? 'On' : 'Off';
+    }
+
+    function updateLanguage() {
+      selectedLanguage = languageSelector.value;
+      selectedAlphabet = languageSelector.selectedOptions[0].dataset.alphabet;
+    }
+
+    function initBoard() {
+      selectRandomLetters();
+      gameBoard.innerHTML = '';
+      cells = [];
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = i;
+        cell.textContent = getRandomLetter();
+        cell.addEventListener('click', () => selectCell(cell));
+        gameBoard.appendChild(cell);
+        cells.push(cell);
+      }
+      pointsLog = [];
+      updatePointsLog();
+      score = 0;
+      scoreDisplay.textContent = `Score: ${score}`;
+      checkMatches();
+    }
+
+    function startGame() {
+      updateLetterCount();
+      toggleSound();
+      updateLanguage();
+      initBoard();
+    }
+
+    function resetGame() {
+      startGame();
+    }
+
+    function selectCell(cell) {
+      const selected = document.querySelector('.selected');
+      if (selected) {
+        const selectedIndex = parseInt(selected.dataset.index);
+        const currentIndex = parseInt(cell.dataset.index);
+        if (isAdjacent(selectedIndex, currentIndex)) {
+          swapCells(selected, cell);
+          selected.classList.remove('selected');
+          checkMatches();
+        } else {
+          selected.classList.remove('selected');
+          cell.classList.add('shake');
+          setTimeout(() => cell.classList.remove('shake'), 200);
+        }
+      } else {
+        cell.classList.add('selected');
+        if (letterSoundEnabled) {
+          speakLetter(cell.textContent);
+        }
+      }
+    }
+
+    function isAdjacent(index1, index2) {
+      const row1 = Math.floor(index1 / gridSize);
+      const col1 = index1 % gridSize;
+      const row2 = Math.floor(index2 / gridSize);
+      const col2 = index2 % gridSize;
+      return Math.abs(row1 - row2) + Math.abs(col1 - col2) === 1;
+    }
+
+    function swapCells(cell1, cell2) {
+      [cell1.textContent, cell2.textContent] = [cell2.textContent, cell1.textContent];
+    }
+
+    function checkMatches() {
+      const matches = [];
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const index = i * gridSize + j;
+          const letter = cells[index].textContent;
+          if (!letter) continue;
+          const horizontalMatch = getMatch(index, letter, 1); // Check right
+          const verticalMatch = getMatch(index, letter, gridSize); // Check down
+          const diagonalMatch1 = getMatch(index, letter, gridSize + 1); // Check diagonal down-right
+          const diagonalMatch2 = getMatch(index, letter, gridSize - 1); // Check diagonal down-left
+
+          if (horizontalMatch.length >= 3) matches.push(...horizontalMatch);
+          if (verticalMatch.length >= 3) matches.push(...verticalMatch);
+          if (diagonalMatch1.length >= 3) matches.push(...diagonalMatch1);
+          if (diagonalMatch2.length >= 3) matches.push(...diagonalMatch2);
+        }
+      }
+      if (matches.length > 0) {
+        highlightMatches([...new Set(matches)]); // Use Set to remove duplicate cells
+      }
+    }
+
+    function getMatch(index, letter, step) {
+      const match = [index];
+      for (let i = 1; i < gridSize; i++) {
+        const nextIndex = index + step * i;
+        if (cells[nextIndex] && cells[nextIndex].textContent === letter) {
+          match.push(nextIndex);
+        } else {
+          break;
+        }
+      }
+      return match;
+    }
+
+    function highlightMatches(matches) {
+      matches.forEach(index => cells[index].classList.add('highlighted'));
+      setTimeout(() => {
+        clearMatches(matches);
+        applyGravity();
+        refillBoard();
+        checkMatches();
+      }, 500);
+    }
+
+    function clearMatches(matches) {
+      const letters = matches.map(index => cells[index].textContent);
+      const points = calculatePoints(matches.length);
+      score += points;
+      matches.forEach(index => {
+        cells[index].classList.remove('highlighted');
+        cells[index].textContent = '';
+      });
+      logPoints(matches.length, points, letters);
+      scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    function calculatePoints(matchSize) {
+      if (matchSize === 3) return 10;
+      if (matchSize === 4) return 20;
+      if (matchSize === 5) return 30;
+      return 50;
+    }
+
+    function logPoints(matchSize, points, letters) {
+      const letterLinks = letters.map(letter => `<span class="log-letter" onclick="speakLetter('${letter}')">${letter}</span>`).join(', ');
+      pointsLog.push(`Matched ${matchSize}: +${points} points (Letters: ${letterLinks})`);
+      updatePointsLog();
+    }
+
+    function updatePointsLog() {
+      pointsLogDisplay.innerHTML = pointsLog.map(log => `<div class="log-entry">${log}</div>`).join('');
+    }
+
+    function applyGravity() {
+      for (let col = 0; col < gridSize; col++) {
+        for (let row = gridSize - 1; row > 0; row--) {
+          let index = row * gridSize + col;
+          if (!cells[index].textContent) {
+            for (let k = row - 1; k >= 0; k--) {
+              let aboveIndex = k * gridSize + col;
+              if (cells[aboveIndex].textContent) {
+                cells[index].textContent = cells[aboveIndex].textContent;
+                cells[aboveIndex].textContent = '';
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function refillBoard() {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          let index = i * gridSize + j;
+          if (!cells[index].textContent) {
+            cells[index].textContent = getRandomLetter();
+          }
+        }
+      }
+    }
+
+    function speakLetter(letter) {
+      const utterance = new SpeechSynthesisUtterance(letter);
+      utterance.lang = selectedLanguage;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
